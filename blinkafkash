@@ -1,0 +1,23 @@
+#!/bin/bash -eu
+#
+# Toggle 2 LED on each kafka message.
+# @dep jq, oq (https://github.com/thbkrkr/qli/releases/download/0.2.1/oq), blinkstick (pip install blinkstick)
+#
+
+get() { jq -r .message <<< $1 2>/dev/null; }
+
+blink() { blinkstick --index $1 --pulse $2 --brightness 40 --duration 70; }
+
+main() {
+  while read msg; do
+    msg=$(get $msg)
+    echo "$msg"
+    case "$msg" in
+      ping)   blink 1 cyan & ;;
+      pong)   blink 6 green & ;;
+      *)  blink 3 green & ;;
+    esac
+  done < <(oq)
+}
+
+main

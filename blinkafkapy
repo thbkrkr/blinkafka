@@ -1,0 +1,56 @@
+#!/usr/bin/python
+
+import os
+import json
+import sys
+import ssl
+from kafka import KafkaProducer, KafkaClient, KafkaConsumer
+from kafka.errors import KafkaError
+from blinkstick import blinkstick
+
+broker = os.environ['B']
+username = os.environ['U']
+password = os.environ['P']
+topic = os.environ['T']
+
+try:
+    consumer = KafkaConsumer(topic,
+        bootstrap_servers=[broker],
+        security_protocol="SASL_SSL",
+        ssl_context=ssl.SSLContext(ssl.PROTOCOL_TLSv1),
+        sasl_mechanism="PLAIN",
+        sasl_plain_username=username,
+        sasl_plain_password=password,
+        enable_auto_commit=True,
+        auto_commit_interval_ms=1000,
+        group_id=username+".blink-group")
+
+    brightness_limit = 50
+    stick = blinkstick.find_first()
+    stick.set_max_rgb_value(int(float(brightness_limit) / 100.0 * 255))
+
+    print "Ready..."
+    i = 0
+    for message in consumer:
+        try:
+            msg = json.loads(message.value)
+        except:
+            continue
+
+        index = i
+        repeats = 1
+        delay = 30
+        if i%2 == 0:
+            color = '#4285f4'
+        else:
+            color = '#E91E63'
+
+        stick.blink(index=index, hex=color, repeats=repeats, delay=delay)
+
+        i = i + 1
+        if i is 8:
+            i = 0
+
+except KeyboardInterrupt:
+    consumer.close()
+    sys.exit(0)
