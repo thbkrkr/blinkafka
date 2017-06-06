@@ -45,7 +45,10 @@ try:
         else:
             color = '#E91E63'
 
-        stick.blink(index=index, hex=color, repeats=repeats, delay=delay)
+        try:
+            stick.blink(index=index, hex=color, repeats=repeats, delay=delay)
+        except:
+            continue
 
         i = i + 1
         if i is 8:
